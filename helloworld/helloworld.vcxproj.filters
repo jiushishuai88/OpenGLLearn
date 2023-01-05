@@ -21,20 +21,38 @@
     <ClCompile Include="glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommomHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\helloworld.frag">
+    <None Include="shaders\cube.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="shaders\hellowrold.vert">
+    <None Include="shaders\cube.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\light.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\light.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
