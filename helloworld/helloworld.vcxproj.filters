@@ -41,6 +41,9 @@
     <ClInclude Include="mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\cube.frag">
@@ -53,6 +56,36 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="shaders\light.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\model.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\model.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\1.1.depth_testing.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\1.1.depth_testing.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\singlecolor.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\3.1.blending.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\skybox.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\skybox.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\cubeEnv.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\cubeEnv.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

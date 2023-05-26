@@ -12,3 +12,4 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "mesh.h"
+#include "model.h"

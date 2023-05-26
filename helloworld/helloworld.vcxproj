@@ -151,15 +151,26 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="CommomHeader.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="model.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\1.1.depth_testing.frag" />
+    <None Include="shaders\1.1.depth_testing.vert" />
+    <None Include="shaders\3.1.blending.frag" />
     <None Include="shaders\cube.frag" />
     <None Include="shaders\cube.vert" />
+    <None Include="shaders\cubeEnv.frag" />
+    <None Include="shaders\cubeEnv.vert" />
     <None Include="shaders\light.frag" />
     <None Include="shaders\light.vert" />
+    <None Include="shaders\model.frag" />
+    <None Include="shaders\model.vert" />
+    <None Include="shaders\singlecolor.frag" />
+    <None Include="shaders\skybox.frag" />
+    <None Include="shaders\skybox.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
