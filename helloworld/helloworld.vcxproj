@@ -164,10 +164,14 @@
     <None Include="shaders\cube.vert" />
     <None Include="shaders\cubeEnv.frag" />
     <None Include="shaders\cubeEnv.vert" />
+    <None Include="shaders\explode.geom" />
+    <None Include="shaders\instance.frag" />
+    <None Include="shaders\instance.vert" />
     <None Include="shaders\light.frag" />
     <None Include="shaders\light.vert" />
     <None Include="shaders\model.frag" />
     <None Include="shaders\model.vert" />
+    <None Include="shaders\modelExplode.geom" />
     <None Include="shaders\singlecolor.frag" />
     <None Include="shaders\skybox.frag" />
     <None Include="shaders\skybox.vert" />

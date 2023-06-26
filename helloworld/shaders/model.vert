@@ -8,14 +8,20 @@ uniform mat4 modelTrans;
 uniform mat4 viewTrans;
 uniform mat4 projectionTrans;
 
-out vec3 fragPos;
-out vec2 TexCoords;
-out vec3 normalVector;
+
+out VS_OUT {
+    vec2 texCoords;
+    vec3 normal;
+    vec3 position;
+    vec3 fragPos;
+} vs_out;
+
 
 void main()
 {
    gl_Position = projectionTrans*viewTrans*modelTrans*vec4(aPos.xyz, 1.0);
-   fragPos = vec3(viewTrans*modelTrans*vec4(aPos.xyz, 1.0));
-   normalVector =mat3(transpose(inverse(viewTrans*modelTrans)))*aNormal;
-   TexCoords = aTexCoords;
+   vs_out.fragPos = vec3(viewTrans*modelTrans*vec4(aPos.xyz, 1.0));
+   vs_out.normal =mat3(transpose(inverse(viewTrans*modelTrans)))*aNormal;
+   vs_out.texCoords = aTexCoords;
+   vs_out.position = vec3(modelTrans * vec4(aPos, 1.0));
 }

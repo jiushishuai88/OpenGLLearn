@@ -8,6 +8,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 void createFrameBuffer(unsigned int& _framebuffer, unsigned int& _frameTexture);
+void createMultiSampleFrameBuffer(unsigned int& _framebuffer, unsigned int& _intermediateFBO, unsigned int& _screenTexture, unsigned int _samples);
 unsigned int loadCubemap(vector<std::string> faces);
 
 // settings
@@ -23,9 +24,10 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-unsigned int framebuffer,frameTexture;
+unsigned int framebuffer,frameTexture,intermediateFBO,screenTexture;
 const std::string IMAGE_PATH_SKYBOX = R"(D:\workSpace\CodeSpace\OpenGLLearn\helloworld\Images\skybox\)";
 const std::string SHADER_PATH = R"(D:\workSpace\CodeSpace\OpenGLLearn\helloworld\shaders\)";
+const std::string MODEL_PATH = R"(D:\workSpace\CodeSpace\OpenGLLearn\helloworld\models\)";
 
 
 int main()
@@ -39,6 +41,7 @@ int main()
 
     // glfw window creation
     // --------------------
+    glfwWindowHint(  , 4);
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
@@ -64,8 +67,8 @@ int main()
 
     // configure global opengl state
     // -----------------------------
+    glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS); // always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
     glEnable(GL_STENCIL_TEST);
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
 
@@ -75,7 +78,9 @@ int main()
     Shader shaderSingleColor((SHADER_PATH + "1.1.depth_testing.vert").c_str(), (SHADER_PATH + "singlecolor.frag").c_str());
     Shader shaderGrass((SHADER_PATH + "1.1.depth_testing.vert").c_str(), (SHADER_PATH + "3.1.blending.frag").c_str());
     Shader skyboxShader((SHADER_PATH + "skybox.vert").c_str(), (SHADER_PATH + "skybox.frag").c_str());
-    Shader cubeEnvShader((SHADER_PATH + "cubeEnv.vert").c_str(), (SHADER_PATH + "cubeEnv.frag").c_str());
+    Shader cubeEnvShader((SHADER_PATH + "cubeEnv.vert").c_str(), (SHADER_PATH + "cubeEnv.frag").c_str(), (SHADER_PATH + "explode.geom").c_str());
+    Shader modelShader((SHADER_PATH + "model.vert").c_str(), (SHADER_PATH + "model.frag").c_str(), (SHADER_PATH + "modelExplode.geom").c_str());
+    Shader instanceShader((SHADER_PATH + "instance.vert").c_str(), (SHADER_PATH + "instance.frag").c_str());
 
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -240,6 +245,7 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     // load textures
@@ -267,9 +273,51 @@ int main()
         glm::vec3(0.5f, 0.0f, -0.6f)
     };
 
-    createFrameBuffer(framebuffer,frameTexture);
-    // shader configuration
-    // --------------------
+    createMultiSampleFrameBuffer(framebuffer,intermediateFBO,screenTexture,4);
+
+    stbi_set_flip_vertically_on_load(true);
+    Model camodel(MODEL_PATH+"nanosuit.obj");
+    Model c385model(MODEL_PATH + "C385.obj");
+
+
+    glm::vec2 translations[100];
+    int index = 0;
+    float offset = 0.1f;
+    for (int y = -10; y < 10; y += 2)
+    {
+        for (int x = -10; x < 10; x += 2)
+        {
+            glm::vec2 translation;
+            translation.x = (float)x / 10.0f + offset;
+            translation.y = (float)y / 10.0f + offset;
+            translations[index++] = translation;
+        }
+    }
+
+    unsigned int instanceVBO;
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    unsigned int mutiCubeVAO,mutiCubeVBO;
+    glGenVertexArrays(1, &mutiCubeVAO);
+    glGenBuffers(1, &mutiCubeVBO);
+    glBindVertexArray(mutiCubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, mutiCubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO); 
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribDivisor(3, 1); 
+    glBindVertexArray(0);
 
     // render loop
     // -----------
@@ -322,7 +370,7 @@ int main()
         glBindVertexArray(0);
 
         // cubes
-        glEnable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE);
         glBindVertexArray(cubeVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cubeTexture);
@@ -333,6 +381,10 @@ int main()
         model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
         shader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
+        glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         //正常渲染
         glDisable(GL_BLEND);
@@ -350,35 +402,77 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
+        //muticubes
+        glDisable(GL_CULL_FACE);
+        glBindVertexArray(mutiCubeVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, cubeTexture);
+        instanceShader.use();
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 3.0f, -1.0f));
+        instanceShader.setMat4("model", model);
+        instanceShader.setMat4("view", view);
+        instanceShader.setMat4("projection", projection);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 100);
+        glBindVertexArray(0);
+
         // cubes
         glDisable(GL_CULL_FACE);
         glBindVertexArray(cubeVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cubeTexture);
         model = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, -1.0f));
+        shader.use();
         shader.setMat4("view",view);
         shader.setMat4("projection", projection);
         shader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+
+        glBindVertexArray(cubeVAO);
+        glDisable(GL_CULL_FACE);
         cubeEnvShader.use();
         model = glm::mat4(1.0f);
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 3.0f, 0.0f));
         cubeEnvShader.setMat4("view", view);
         cubeEnvShader.setMat4("projection", projection);
         cubeEnvShader.setMat4("model", model);
         cubeEnvShader.setInt("texture0", 0);
         cubeEnvShader.setInt("skybox", 1);
         cubeEnvShader.setVec3("cameraPos", camera.Position);
+        cubeEnvShader.setFloat("time", currentFrame);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cubeTexture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+        //车模渲染
+        modelShader.use();
+        model = glm::mat4(1.0f);
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.0f, -10.0f));
+        modelShader.setMat4("viewTrans", view);
+        modelShader.setMat4("projectionTrans", projection);
+        modelShader.setMat4("modelTrans", model);
+        modelShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+        modelShader.setVec3("dirLight.ambient", 0.95f, 0.95f, 0.95f);
+        modelShader.setVec3("dirLight.diffuse", 0.9f, 0.9f, 0.9f);
+        modelShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+        modelShader.setVec3("cameraPos", camera.Position);
+        modelShader.setFloat("time", currentFrame);
+        modelShader.setInt("skybox", 9);
+        glActiveTexture(GL_TEXTURE9);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        camodel.Draw(modelShader);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(20.0f, 3.0f, -10.0f));
+        modelShader.setMat4("modelTrans", model);
+        c385model.Draw(modelShader);
+
       
 
         //天空盒渲染
+        glDisable(GL_CULL_FACE);
         glDepthFunc(GL_LEQUAL);
         skyboxShader.use();
         skyboxShader.setMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
@@ -395,7 +489,6 @@ int main()
         shader.setMat4("projection", projection);
 
         //window
-        glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shaderGrass.use();
@@ -413,10 +506,10 @@ int main()
         }
 
         //渲染到矩形框
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glBindTexture(GL_TEXTURE_2D, frameTexture);
+        glBindTexture(GL_TEXTURE_2D, screenTexture);
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.5f, 1.7f));
+        model = glm::rotate(model, 1.0f, glm::vec3(0.0, 0.0, 1.0));
         shaderGrass.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -563,6 +656,48 @@ void createFrameBuffer(unsigned int &_framebuffer,unsigned int &_frameTexture)
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void createMultiSampleFrameBuffer(unsigned int& _framebuffer, unsigned int& _intermediateFBO, unsigned int& _screenTexture,unsigned int _samples)
+{
+    //配置MSAAbuffer
+    glGenFramebuffers(1, &_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+
+
+    unsigned int textureColorBufferMultiSampled;
+    glGenTextures(1, &textureColorBufferMultiSampled);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, _samples, GL_RGB, SCR_WIDTH, SCR_HEIGHT,GL_TRUE);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled, 0);
+
+
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, _samples,GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //后处理buffer
+    glGenFramebuffers(1, &_intermediateFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, _intermediateFBO);
+    // 颜色附件
+    glGenTextures(1, &_screenTexture);
+    glBindTexture(GL_TEXTURE_2D, _screenTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _screenTexture, 0);	// we only need a color buffer
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Intermediate framebuffer is not complete!" << endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

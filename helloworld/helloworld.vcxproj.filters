@@ -88,5 +88,17 @@
     <None Include="shaders\cubeEnv.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="shaders\explode.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\modelExplode.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\instance.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\instance.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
